@@ -19,6 +19,7 @@ package core
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -111,9 +112,7 @@ func TestNew(t *testing.T) {
 					&jobset.JobSet{},
 					&mpi.MPI{},
 				},
-				terminalConditionPlugins: []framework.TerminalConditionPlugin{
-					&jobset.JobSet{},
-				},
+				trainJobStatusPlugin: &jobset.JobSet{},
 			},
 		},
 		"indexer key for trainingRuntime and runtimeClass is an empty": {
@@ -136,7 +135,7 @@ func TestNew(t *testing.T) {
 		cmpopts.IgnoreUnexported(coscheduling.CoScheduling{}, volcano.Volcano{}, mpi.MPI{}, plainml.PlainML{}, torch.Torch{}, jobset.JobSet{}),
 		cmpopts.IgnoreFields(coscheduling.CoScheduling{}, "client"),
 		cmpopts.IgnoreFields(volcano.Volcano{}, "client"),
-		cmpopts.IgnoreFields(jobset.JobSet{}, "client"),
+		cmpopts.IgnoreFields(jobset.JobSet{}, "client", "restMapper", "scheme", "logger"),
 		cmpopts.IgnoreTypes(apiruntime.Scheme{}, meta.DefaultRESTMapper{}, fwkplugins.Registry{}),
 		cmpopts.SortMaps(func(a, b string) bool { return a < b }),
 		cmpopts.SortSlices(func(a, b framework.Plugin) bool { return a.Name() < b.Name() }),
@@ -1440,28 +1439,33 @@ func TestWatchExtensionPlugins(t *testing.T) {
 	}
 }
 
-type fakeTerminalConditionPlugin struct{}
+type fakeTrainJobStatusPlugin struct{}
 
-var _ framework.TerminalConditionPlugin = (*fakeTerminalConditionPlugin)(nil)
+var _ framework.TrainJobStatusPlugin = (*fakeTrainJobStatusPlugin)(nil)
 
-func newFakeTerminalConditionPlugin(context.Context, client.Client, client.FieldIndexer) (framework.Plugin, error) {
-	return &fakeTerminalConditionPlugin{}, nil
+func newFakeJobsStatusPlugin(context.Context, client.Client, client.FieldIndexer) (framework.Plugin, error) {
+	return &fakeTrainJobStatusPlugin{}, nil
 }
 
-const fakeTerminalConditionPluginName = "fake"
+const fakeJobsStatusPluginName = "fake-train-job-status"
 
-func (f fakeTerminalConditionPlugin) Name() string { return fakeTerminalConditionPluginName }
-func (f fakeTerminalConditionPlugin) TerminalCondition(context.Context, *trainer.TrainJob) (*metav1.Condition, error) {
-	return nil, nil
+func (f fakeTrainJobStatusPlugin) Name() string { return fakeJobsStatusPluginName }
+func (f fakeTrainJobStatusPlugin) Status(context.Context, *trainer.TrainJob) (*trainer.TrainJobStatus, error) {
+	return &trainer.TrainJobStatus{
+		JobsStatus: []trainer.JobStatus{
+			{Name: "fake-job", Ready: 1, Succeeded: 0, Failed: 0, Active: 1, Suspended: 0},
+		},
+	}, nil
 }
 
-func TestTerminalConditionPlugins(t *testing.T) {
+func TestTrainJobStatusPlugins(t *testing.T) {
+	lastTransitionTime := metav1.Time{Time: time.Now()}.Rfc3339Copy()
 	cases := map[string]struct {
-		registry      fwkplugins.Registry
-		trainJob      *trainer.TrainJob
-		jobSet        *jobsetv1alpha2.JobSet
-		wantCondition *metav1.Condition
-		wantError     error
+		registry   fwkplugins.Registry
+		trainJob   *trainer.TrainJob
+		jobSet     *jobsetv1alpha2.JobSet
+		wantStatus *trainer.TrainJobStatus
+		wantError  error
 	}{
 		"jobSet has not been finalized, yet": {
 			registry: fwkplugins.NewRegistry(),
@@ -1475,6 +1479,7 @@ func TestTerminalConditionPlugins(t *testing.T) {
 					Status:  metav1.ConditionFalse,
 				}).
 				Obj(),
+			wantStatus: &trainer.TrainJobStatus{},
 		},
 		"succeeded to obtain completed terminal condition": {
 			registry: fwkplugins.NewRegistry(),
@@ -1482,17 +1487,23 @@ func TestTerminalConditionPlugins(t *testing.T) {
 				Obj(),
 			jobSet: testingutil.MakeJobSetWrapper(metav1.NamespaceDefault, "testing").
 				Conditions(metav1.Condition{
-					Type:    string(jobsetv1alpha2.JobSetCompleted),
-					Reason:  jobsetconsts.AllJobsCompletedReason,
-					Message: jobsetconsts.AllJobsCompletedMessage,
-					Status:  metav1.ConditionTrue,
+					Type:               string(jobsetv1alpha2.JobSetCompleted),
+					LastTransitionTime: lastTransitionTime,
+					Message:            jobsetconsts.AllJobsCompletedMessage,
+					Reason:             jobsetconsts.AllJobsCompletedReason,
+					Status:             metav1.ConditionTrue,
 				}).
 				Obj(),
-			wantCondition: &metav1.Condition{
-				Type:    trainer.TrainJobComplete,
-				Reason:  jobsetconsts.AllJobsCompletedReason,
-				Message: jobsetconsts.AllJobsCompletedMessage,
-				Status:  metav1.ConditionTrue,
+			wantStatus: &trainer.TrainJobStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               trainer.TrainJobComplete,
+						LastTransitionTime: lastTransitionTime,
+						Message:            jobsetconsts.AllJobsCompletedMessage,
+						Reason:             jobsetconsts.AllJobsCompletedReason,
+						Status:             metav1.ConditionTrue,
+					},
+				},
 			},
 		},
 		"succeeded to obtain failed terminal condition": {
@@ -1501,25 +1512,136 @@ func TestTerminalConditionPlugins(t *testing.T) {
 				Obj(),
 			jobSet: testingutil.MakeJobSetWrapper(metav1.NamespaceDefault, "testing").
 				Conditions(metav1.Condition{
-					Type:    string(jobsetv1alpha2.JobSetFailed),
-					Reason:  jobsetconsts.FailedJobsReason,
-					Message: jobsetconsts.FailedJobsMessage,
-					Status:  metav1.ConditionTrue,
+					Type:               string(jobsetv1alpha2.JobSetFailed),
+					LastTransitionTime: lastTransitionTime,
+					Message:            jobsetconsts.FailedJobsMessage,
+					Reason:             jobsetconsts.FailedJobsReason,
+					Status:             metav1.ConditionTrue,
 				}).
 				Obj(),
-			wantCondition: &metav1.Condition{
-				Type:    trainer.TrainJobFailed,
-				Reason:  jobsetconsts.FailedJobsReason,
-				Message: jobsetconsts.FailedJobsMessage,
-				Status:  metav1.ConditionTrue,
+			wantStatus: &trainer.TrainJobStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               trainer.TrainJobFailed,
+						LastTransitionTime: lastTransitionTime,
+						Message:            jobsetconsts.FailedJobsMessage,
+						Reason:             jobsetconsts.FailedJobsReason,
+						Status:             metav1.ConditionTrue,
+					},
+				},
 			},
 		},
-		"failed to obtain any terminal condition due to multiple terminalCondition plugin": {
+		"failed to obtain TrainJob status due to multiple trainJobStatus plugin": {
 			registry: fwkplugins.Registry{
-				jobset.Name:                     jobset.New,
-				fakeTerminalConditionPluginName: newFakeTerminalConditionPlugin,
+				jobset.Name:              jobset.New,
+				fakeJobsStatusPluginName: newFakeJobsStatusPlugin,
 			},
-			wantError: errorTooManyTerminalConditionPlugin,
+			wantError: errorTooManyTrainJobStatusPlugin,
+		},
+		"JobSet with empty replicated jobs status": {
+			registry: fwkplugins.NewRegistry(),
+			trainJob: testingutil.MakeTrainJobWrapper(metav1.NamespaceDefault, "testing").
+				Obj(),
+			jobSet: testingutil.MakeJobSetWrapper(metav1.NamespaceDefault, "testing").
+				Obj(),
+			wantStatus: &trainer.TrainJobStatus{},
+		},
+		"succeeded to obtain JobsStatus from JobSet with multiple replicated jobs": {
+			registry: fwkplugins.NewRegistry(),
+			trainJob: testingutil.MakeTrainJobWrapper(metav1.NamespaceDefault, "testing").
+				Obj(),
+			jobSet: testingutil.MakeJobSetWrapper(metav1.NamespaceDefault, "testing").
+				ReplicatedJobsStatuses([]jobsetv1alpha2.ReplicatedJobStatus{
+					{
+						Name:      constants.DatasetInitializer,
+						Ready:     1,
+						Succeeded: 1,
+						Failed:    0,
+						Active:    0,
+						Suspended: 0,
+					},
+					{
+						Name:      constants.ModelInitializer,
+						Ready:     1,
+						Succeeded: 1,
+						Failed:    0,
+						Active:    0,
+						Suspended: 0,
+					},
+					{
+						Name:      constants.Node,
+						Ready:     2,
+						Succeeded: 0,
+						Failed:    0,
+						Active:    2,
+						Suspended: 0,
+					},
+				}).
+				Obj(),
+			wantStatus: &trainer.TrainJobStatus{
+				JobsStatus: []trainer.JobStatus{
+					{
+						Name:      constants.DatasetInitializer,
+						Ready:     1,
+						Succeeded: 1,
+						Failed:    0,
+						Active:    0,
+						Suspended: 0,
+					},
+					{
+						Name:      constants.ModelInitializer,
+						Ready:     1,
+						Succeeded: 1,
+						Failed:    0,
+						Active:    0,
+						Suspended: 0,
+					},
+					{
+						Name:      constants.Node,
+						Ready:     2,
+						Succeeded: 0,
+						Failed:    0,
+						Active:    2,
+						Suspended: 0,
+					},
+				},
+			},
+		},
+		"succeeded to obtain JobsStatus from JobSet with failed job": {
+			registry: fwkplugins.NewRegistry(),
+			trainJob: testingutil.MakeTrainJobWrapper(metav1.NamespaceDefault, "testing").
+				Obj(),
+			jobSet: testingutil.MakeJobSetWrapper(metav1.NamespaceDefault, "testing").
+				ReplicatedJobsStatuses([]jobsetv1alpha2.ReplicatedJobStatus{
+					{
+						Name:      constants.Node,
+						Ready:     0,
+						Succeeded: 0,
+						Failed:    1,
+						Active:    0,
+						Suspended: 0,
+					},
+				}).
+				Obj(),
+			wantStatus: &trainer.TrainJobStatus{
+				JobsStatus: []trainer.JobStatus{
+					{
+						Name:      constants.Node,
+						Ready:     0,
+						Succeeded: 0,
+						Failed:    1,
+						Active:    0,
+						Suspended: 0,
+					},
+				},
+			},
+		},
+		"failed to obtain JobsStatus due to multiple JobsStatusPlugins": {
+			registry: fwkplugins.Registry{
+				jobset.Name:              jobset.New,
+				fakeJobsStatusPluginName: newFakeJobsStatusPlugin,
+			},
+			wantError: errorTooManyTrainJobStatusPlugin,
 		},
 	}
 	for name, tc := range cases {
@@ -1534,16 +1656,19 @@ func TestTerminalConditionPlugins(t *testing.T) {
 
 			fwk, err := New(ctx, c, tc.registry, testingutil.AsIndex(clientBuilder))
 			if err != nil {
-				t.Fatal(err)
+				if diff := cmp.Diff(tc.wantError, err, cmpopts.EquateErrors()); len(diff) != 0 {
+					t.Errorf("Unexpected error (-want,+got):\n%s", diff)
+				}
+				return
 			}
 
-			gotCond, gotErr := fwk.RunTerminalConditionPlugins(ctx, tc.trainJob)
+			gotStatus, gotErr := fwk.RunTrainJobStatusPlugin(ctx, tc.trainJob)
 			if diff := cmp.Diff(tc.wantError, gotErr, cmpopts.EquateErrors()); len(diff) != 0 {
 				t.Errorf("Unexpected error (-want,+got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.wantCondition, gotCond); len(diff) != 0 {
-				t.Errorf("Unexpected terminal condition (-want,+got):\n%s", diff)
+			if diff := cmp.Diff(tc.wantStatus, gotStatus); len(diff) != 0 {
+				t.Errorf("Unexpected TrainJob status (-want,+got):\n%s", diff)
 			}
 		})
 	}

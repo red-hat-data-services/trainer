@@ -62,7 +62,7 @@ type JobSet struct {
 var _ framework.WatchExtensionPlugin = (*JobSet)(nil)
 var _ framework.PodNetworkPlugin = (*JobSet)(nil)
 var _ framework.ComponentBuilderPlugin = (*JobSet)(nil)
-var _ framework.TerminalConditionPlugin = (*JobSet)(nil)
+var _ framework.TrainJobStatusPlugin = (*JobSet)(nil)
 var _ framework.CustomValidationPlugin = (*JobSet)(nil)
 
 const Name = constants.JobSetKind
@@ -280,18 +280,34 @@ func (j *JobSet) Build(ctx context.Context, info *runtime.Info, trainJob *traine
 	return []any{jobSet}, nil
 }
 
-func (j *JobSet) TerminalCondition(ctx context.Context, trainJob *trainer.TrainJob) (*metav1.Condition, error) {
+func (j *JobSet) Status(ctx context.Context, trainJob *trainer.TrainJob) (*trainer.TrainJobStatus, error) {
 	jobSet := &jobsetv1alpha2.JobSet{}
 	if err := j.client.Get(ctx, client.ObjectKeyFromObject(trainJob), jobSet); err != nil {
 		return nil, err
 	}
+	status := trainJob.Status.DeepCopy()
+
 	if completed := meta.FindStatusCondition(jobSet.Status.Conditions, string(jobsetv1alpha2.JobSetCompleted)); completed != nil && completed.Status == metav1.ConditionTrue {
 		completed.Type = trainer.TrainJobComplete
-		return completed, nil
+		meta.SetStatusCondition(&status.Conditions, *completed)
 	}
 	if failed := meta.FindStatusCondition(jobSet.Status.Conditions, string(jobsetv1alpha2.JobSetFailed)); failed != nil && failed.Status == metav1.ConditionTrue {
 		failed.Type = trainer.TrainJobFailed
-		return failed, nil
+		meta.SetStatusCondition(&status.Conditions, *failed)
 	}
-	return nil, nil
+
+	var statuses []trainer.JobStatus
+	for _, status := range jobSet.Status.ReplicatedJobsStatus {
+		statuses = append(statuses, trainer.JobStatus{
+			Name:      status.Name,
+			Ready:     status.Ready,
+			Succeeded: status.Succeeded,
+			Failed:    status.Failed,
+			Active:    status.Active,
+			Suspended: status.Suspended,
+		})
+	}
+	status.JobsStatus = statuses
+
+	return status, nil
 }
