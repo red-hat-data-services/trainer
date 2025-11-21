@@ -43,6 +43,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - limitranges
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - admissionregistration.k8s.io
   resources:
   - validatingwebhookconfigurations
@@ -51,6 +59,15 @@ rules:
   - list
   - update
   - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - update
 - apiGroups:
   - jobset.x-k8s.io
   resources:
@@ -63,6 +80,15 @@ rules:
   - update
   - watch
 - apiGroups:
+  - node.k8s.io
+  resources:
+  - runtimeclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - scheduling.volcano.sh
   - scheduling.x-k8s.io
   resources:
   - podgroups
