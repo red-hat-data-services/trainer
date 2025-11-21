@@ -18,10 +18,10 @@ TRAINER_CHART_DIR := $(PROJECT_DIR)/charts/kubeflow-trainer
 LOCALBIN ?= $(PROJECT_DIR)/bin
 
 # Tool versions
-K8S_VERSION ?= 1.32.0
+K8S_VERSION ?= 1.34.0
 GINKGO_VERSION ?= $(shell go list -m -f '{{.Version}}' github.com/onsi/ginkgo/v2)
-ENVTEST_VERSION ?= release-0.20
-CONTROLLER_GEN_VERSION ?= v0.17.2
+ENVTEST_VERSION ?= release-0.22
+CONTROLLER_GEN_VERSION ?= v0.18.0
 KIND_VERSION ?= $(shell go list -m -f '{{.Version}}' sigs.k8s.io/kind)
 HELM_VERSION ?= v3.15.3
 HELM_UNITTEST_VERSION ?= 0.5.1
@@ -40,6 +40,7 @@ KIND ?= $(LOCALBIN)/kind
 HELM ?= $(LOCALBIN)/helm
 HELM_DOCS ?= $(LOCALBIN)/helm-docs
 YQ ?= $(LOCALBIN)/yq
+GOLANGCI_LINT_KAL ?= $(LOCALBIN)/golangci-lint-kube-api-linter
 
 ##@ General
 
@@ -81,6 +82,18 @@ kind: ## Download Kind binary if required.
 helm: ## Download helm locally if required.
 	GOBIN=$(LOCALBIN) go install helm.sh/helm/v3/cmd/helm@$(HELM_VERSION)
 
+GOLANGCI_LINT=$(shell which golangci-lint)
+.PHONY: golangci-lint
+golangci-lint-install: ## Run golangci-lint to verify Go files.
+ifeq ($(GOLANGCI_LINT),)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.64.8
+	$(info golangci-lint has been installed)
+endif
+
+.PHONY: golangci-lint-kal
+golangci-lint-kal: ## Build golangci-lint-kal from custom configuration.
+	cd $(PROJECT_DIR)/hack; $(GOLANGCI_LINT) custom; mv bin/golangci-lint-kube-api-linter $(LOCALBIN)/
+
 .PHONY: helm-unittest-plugin
 helm-unittest-plugin: helm ## Download helm unittest plugin locally if required.
 	if [ -z "$(shell $(HELM) plugin list | grep unittest)" ]; then \
@@ -111,6 +124,15 @@ scheduler-plugins-crd: ## Copy the CRDs from the Scheduler Plugins repository to
 	mkdir -p $(EXTERNAL_CRDS_DIR)/scheduler-plugins/
 	cp -f $(SCHEDULER_PLUGINS_ROOT)/manifests/coscheduling/* $(EXTERNAL_CRDS_DIR)/scheduler-plugins
 
+VOLCANO_APIS_ROOT = $(shell go list -m -f "{{.Dir}}" volcano.sh/apis)
+VOLCANO_VERSION = $(shell basename $(VOLCANO_APIS_ROOT) | cut -d'@' -f2)
+VOLCANO_CRD_URL = https://raw.githubusercontent.com/volcano-sh/volcano/$(VOLCANO_VERSION)/config/crd/volcano/bases/scheduling.volcano.sh_podgroups.yaml
+
+.PHONY: volcano-crd
+volcano-crd: ## Copy the CRDs from Volcano repository to the manifests/external-crds directory.
+	mkdir -p $(EXTERNAL_CRDS_DIR)/volcano/
+	curl -sSL $(VOLCANO_CRD_URL) -o $(EXTERNAL_CRDS_DIR)/volcano/scheduling.volcano.sh_podgroups.yaml
+
 # Instructions for code generation.
 .PHONY: manifests
 manifests: controller-gen ## Generate manifests.
@@ -119,11 +141,13 @@ manifests: controller-gen ## Generate manifests.
 		output:crd:artifacts:config=manifests/base/crds \
 		output:rbac:artifacts:config=manifests/base/rbac \
 		output:webhook:artifacts:config=manifests/base/webhook
+	cp -f manifests/base/crds/trainer.kubeflow.org_*.yaml $(TRAINER_CHART_DIR)/crds/
 
 .PHONY: generate
 generate: go-mod-download manifests ## Generate APIs.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/boilerplate.go.txt" paths="./pkg/apis/..."
 	hack/update-codegen.sh
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/boilerplate.go.txt" paths="./pkg/apis/config/v1alpha1/..."
 	CONTAINER_RUNTIME=$(CONTAINER_RUNTIME) hack/python-api/gen-api.sh
 
 .PHONY: go-mod-download
@@ -139,23 +163,19 @@ fmt: ## Run go fmt against the code.
 vet: ## Run go vet against the code.
 	go vet ./...
 
-GOLANGCI_LINT=$(shell which golangci-lint)
 .PHONY: golangci-lint
-golangci-lint: ## Run golangci-lint to verify Go files.
-ifeq ($(GOLANGCI_LINT),)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.64.8
-	$(info golangci-lint has been installed)
-endif
+golangci-lint: golangci-lint-install golangci-lint-kal ## Run golangci-lint to verify Go files.
 	golangci-lint run --timeout 5m --go 1.24 ./...
+	$(GOLANGCI_LINT_KAL) run -v --config $(PROJECT_DIR)/.golangci-kal.yml
 
 # Instructions to run tests.
 .PHONY: test
 test: ## Run Go unit test.
-	go test $(shell go list ./... | grep -v '/test/' | grep -v '/cmd/' | grep -v '/hack/' | grep -v '/pkg/apis' | grep -v '/pkg/client') -coverprofile cover.out
+	go test $(shell go list ./... | grep -Ev '/(test|cmd|hack|pkg/apis|pkg/client|pkg/util/testing)') -coverprofile cover.out
 
 .PHONY: test-integration
-test-integration: ginkgo envtest jobset-operator-crd scheduler-plugins-crd ## Run Go integration test.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(K8S_VERSION) -p path)" $(GINKGO) -v ./test/integration/... -coverprofile cover.out
+test-integration: ginkgo envtest jobset-operator-crd scheduler-plugins-crd volcano-crd ## Run Go integration test.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(K8S_VERSION) -p path)" $(GINKGO) -v ./test/integration/...
 
 .PHONY: test-python
 test-python: ## Run Python unit test.
@@ -173,9 +193,17 @@ test-python-integration: ## Run Python integration test.
 
 	PYTHONPATH=$(PROJECT_DIR) pytest ./test/integration/initializers
 
+.PHONY: test-rust
+test-rust: ## Run Rust unit test.
+	cargo test --lib --bins --manifest-path ./pkg/data_cache/Cargo.toml
+
 .PHONY: test-e2e-setup-cluster
 test-e2e-setup-cluster: kind ## Setup Kind cluster for e2e test.
 	KIND=$(KIND) K8S_VERSION=$(K8S_VERSION) ./hack/e2e-setup-cluster.sh
+
+.PHONY: test-e2e-setup-gpu-cluster
+test-e2e-setup-gpu-cluster: kind ## Setup Kind cluster for GPU e2e test.
+	KIND=$(KIND) K8S_VERSION=$(K8S_VERSION) ./hack/e2e-setup-gpu-cluster.sh
 
 .PHONY: test-e2e
 test-e2e: ginkgo ## Run Go e2e test.
@@ -202,3 +230,48 @@ helm-lint: ## Run Helm chart lint test.
 .PHONY: helm-docs
 helm-docs: helm-docs-plugin ## Generates markdown documentation for helm charts from requirements and values files.
 	$(HELM_DOCS) --sort-values-order=file
+
+##@ RHOAI Deployment
+
+# Kubernetes CLI tool (kubectl or oc)
+KUBECTL ?= $(shell which oc 2>/dev/null || which kubectl)
+NAMESPACE ?= opendatahub
+RHOAI_MANIFESTS_DIR ?= $(PROJECT_DIR)/manifests/rhoai
+
+.PHONY: deploy-rhoai
+deploy-rhoai: ## Deploy operator using RHOAI manifests with kustomize
+	@echo "Deploying RHOAI Training Operator to namespace: $(NAMESPACE)"
+	@if [ -z "$(KUBECTL)" ]; then \
+		echo "Error: Neither 'oc' nor 'kubectl' found in PATH"; \
+		exit 1; \
+	fi
+	@$(KUBECTL) create namespace $(NAMESPACE) --dry-run=client -o yaml | $(KUBECTL) apply -f - >/dev/null 2>&1
+	@echo "Applying CRDs first..."
+	@$(KUBECTL) apply --server-side=true -k $(RHOAI_MANIFESTS_DIR)/../base/crds
+	@echo "Waiting for CRDs to be established..."
+	@$(KUBECTL) wait --for condition=established --timeout=60s \
+		crd/clustertrainingruntimes.trainer.kubeflow.org \
+		crd/trainingruntimes.trainer.kubeflow.org \
+		crd/trainjobs.trainer.kubeflow.org 2>/dev/null || sleep 5
+	@echo "Applying operator and resources..."
+	@$(KUBECTL) apply --server-side=true -k $(RHOAI_MANIFESTS_DIR)
+	@echo "Waiting for deployment to be ready..."
+	@$(KUBECTL) wait --for=condition=available --timeout=300s \
+		deployment/kubeflow-trainer-controller-manager -n $(NAMESPACE) 2>/dev/null || true
+	@echo "RHOAI Training Operator deployed successfully!"
+
+.PHONY: undeploy-rhoai
+undeploy-rhoai: ## Undeploy operator using RHOAI manifests
+	@echo "Undeploying RHOAI Training Operator from namespace: $(NAMESPACE)"
+	@if [ -z "$(KUBECTL)" ]; then \
+		echo "Error: Neither 'oc' nor 'kubectl' found in PATH"; \
+		exit 1; \
+	fi
+	@echo "Deleting all TrainJob and TrainingRuntime CRs..."
+	@-$(KUBECTL) delete trainjobs.trainer.kubeflow.org --all --all-namespaces --timeout=60s 2>/dev/null || true
+	@-$(KUBECTL) delete trainingruntimes.trainer.kubeflow.org --all --all-namespaces --timeout=60s 2>/dev/null || true
+	@-$(KUBECTL) delete clustertrainingruntimes.trainer.kubeflow.org --all --timeout=60s 2>/dev/null || true
+	@echo "Deleting operator and resources..."
+	@-$(KUBECTL) delete -k $(RHOAI_MANIFESTS_DIR)/runtimes -n $(NAMESPACE) --ignore-not-found=true 2>/dev/null || true
+	@-$(KUBECTL) delete -k $(RHOAI_MANIFESTS_DIR) --ignore-not-found=true 2>&1 | grep -v "no matches for kind" | grep -v "ensure CRDs are installed" || true
+	@echo "RHOAI Training Operator undeployed successfully!"
