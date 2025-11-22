@@ -22,7 +22,7 @@ require (
 	sigs.k8s.io/jobset v0.8.2
 	sigs.k8s.io/kind v0.27.0
 	sigs.k8s.io/scheduler-plugins v0.30.6
-	sigs.k8s.io/structured-merge-diff/v4 v4.5.0
+	sigs.k8s.io/structured-merge-diff/v4 v4.7.0
 )
 
 require (
