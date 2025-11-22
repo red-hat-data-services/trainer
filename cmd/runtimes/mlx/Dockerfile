@@ -1,4 +1,4 @@
-FROM mpioperator/base:v0.6.0 AS mpi
+FROM mpioperator/base:v0.7.0 AS mpi
 FROM debian:trixie
 
 # Install libraries required for OpenMPI and MLX. This image installs OpenMPI 5.0.7
