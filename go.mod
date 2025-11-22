@@ -22,7 +22,7 @@ require (
 	sigs.k8s.io/jobset v0.8.2
 	sigs.k8s.io/kind v0.27.0
 	sigs.k8s.io/scheduler-plugins v0.30.6
-	sigs.k8s.io/structured-merge-diff/v4 v4.5.0
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.1
 )
 
 require (
@@ -68,6 +68,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
@@ -85,5 +86,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.32.1 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240911193312-2b36238f13e9 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
