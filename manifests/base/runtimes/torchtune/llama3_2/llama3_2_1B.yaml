@@ -2,6 +2,8 @@ apiVersion: trainer.kubeflow.org/v1alpha1
 kind: ClusterTrainingRuntime
 metadata:
   name: torchtune-llama3.2-1b
+  labels:
+    trainer.kubeflow.org/framework: torchtune
 spec:
   mlPolicy:
     numNodes: 1
@@ -32,9 +34,6 @@ spec:
                       persistentVolumeClaim:
                         claimName: torchtune-llama3.2-1b
         - name: model-initializer
-          dependsOn:
-            - name: dataset-initializer
-              status: Complete
           template:
             metadata:
               labels:
@@ -57,6 +56,8 @@ spec:
                         claimName: torchtune-llama3.2-1b
         - name: node
           dependsOn:
+            - name: dataset-initializer
+              status: Complete
             - name: model-initializer
               status: Complete
           template:
