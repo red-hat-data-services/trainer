@@ -1,3 +1,4 @@
 huggingface-hub>=0.27.0,<0.28
 opendal>=0.46.0
 kubernetes>=27.2.0
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
