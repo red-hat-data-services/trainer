@@ -17,7 +17,7 @@ require (
 	k8s.io/component-helpers v0.32.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f
-	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	sigs.k8s.io/controller-runtime v0.20.2
 	sigs.k8s.io/jobset v0.8.2
 	sigs.k8s.io/kind v0.27.0
