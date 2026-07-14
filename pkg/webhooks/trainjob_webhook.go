@@ -20,7 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -50,6 +52,10 @@ func (w *TrainJobWebhook) ValidateCreate(ctx context.Context, obj apiruntime.Obj
 	log := ctrl.LoggerFrom(ctx).WithName("trainJob-webhook")
 	log.V(5).Info("Validating create", "TrainJob", klog.KObj(trainJob))
 
+	if errs := validatePodTemplateOverridesSecurity(trainJob); len(errs) > 0 {
+		return nil, errs.ToAggregate()
+	}
+
 	runtimeRefGK := runtime.RuntimeRefToRuntimeRegistryKey(trainJob.Spec.RuntimeRef)
 	runtime, ok := w.runtimes[runtimeRefGK]
 	if !ok {
@@ -64,6 +70,11 @@ func (w *TrainJobWebhook) ValidateUpdate(ctx context.Context, oldObj apiruntime.
 	newTrainJob := newObj.(*trainer.TrainJob)
 	log := ctrl.LoggerFrom(ctx).WithName("trainJob-webhook")
 	log.V(5).Info("Validating update", "TrainJob", klog.KObj(newTrainJob))
+
+	if errs := validatePodTemplateOverridesSecurity(newTrainJob); len(errs) > 0 {
+		return nil, errs.ToAggregate()
+	}
+
 	runtimeRefGK := runtime.RuntimeRefToRuntimeRegistryKey(newTrainJob.Spec.RuntimeRef)
 	runtime, ok := w.runtimes[runtimeRefGK]
 	if !ok {
@@ -75,4 +86,52 @@ func (w *TrainJobWebhook) ValidateUpdate(ctx context.Context, oldObj apiruntime.
 
 func (w *TrainJobWebhook) ValidateDelete(context.Context, apiruntime.Object) (admission.Warnings, error) {
 	return nil, nil
+}
+
+func validatePodTemplateOverridesSecurity(trainJob *trainer.TrainJob) field.ErrorList {
+	var allErrs field.ErrorList
+	basePath := field.NewPath("spec", "podTemplateOverrides")
+
+	for i, override := range trainJob.Spec.PodTemplateOverrides {
+		if override.Spec == nil {
+			continue
+		}
+		specPath := basePath.Index(i).Child("spec")
+
+		for j, vol := range override.Spec.Volumes {
+			if vol.HostPath != nil {
+				allErrs = append(allErrs, field.Forbidden(
+					specPath.Child("volumes").Index(j).Child("hostPath"),
+					"hostPath volumes are not allowed: they enable host filesystem access",
+				))
+			}
+		}
+
+		for j, tol := range override.Spec.Tolerations {
+			if isControlPlaneToleration(tol) {
+				allErrs = append(allErrs, field.Forbidden(
+					specPath.Child("tolerations").Index(j),
+					"tolerations targeting control-plane or master nodes are not allowed: they bypass node isolation",
+				))
+			}
+		}
+	}
+	return allErrs
+}
+
+func isControlPlaneToleration(tol corev1.Toleration) bool {
+	dangerousKeys := []string{
+		"node-role.kubernetes.io/control-plane",
+		"node-role.kubernetes.io/master",
+		"node-role.kubernetes.io/infra",
+	}
+	for _, key := range dangerousKeys {
+		if tol.Key == key {
+			return true
+		}
+	}
+	if tol.Operator == corev1.TolerationOpExists && tol.Key == "" {
+		return true
+	}
+	return false
 }
