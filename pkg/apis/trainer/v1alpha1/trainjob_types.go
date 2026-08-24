@@ -126,6 +126,14 @@ type TrainJobSpec struct {
 	// +optional
 	PodTemplateOverrides []PodTemplateOverride `json:"podTemplateOverrides,omitempty"`
 
+	// runtimePatches defines custom patches applied to the TrainJob's Runtime.
+	// Patches are keyed by manager to provide clear ownership and avoid conflicts between controllers.
+	// +listType=map
+	// +listMapKey=manager
+	// +kubebuilder:validation:MaxItems=16
+	// +optional
+	RuntimePatches []RuntimePatch `json:"runtimePatches,omitempty"`
+
 	// suspend defines whether to suspend the running TrainJob.
 	// Defaults to false.
 	// +kubebuilder:default=false
@@ -286,6 +294,204 @@ type PodTemplateOverrideTargetJob struct {
 	// +kubebuilder:validation:MinLength=1
 	// +required
 	Name string `json:"name,omitempty"`
+}
+
+// RuntimePatch represents a custom patch applied to the TrainJob's training runtime template.
+// Patches are keyed by manager to provide clear ownership and avoid conflicts between controllers.
+type RuntimePatch struct {
+	// manager indicates who owns this patch entry. It can be set by the user, external
+	// controllers, or admission webhooks to track ownership and avoid conflicts.
+	// For example, Kueue sets this field to "kueue.x-k8s.io/manager".
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +required
+	Manager string `json:"manager,omitempty"`
+
+	// time is the timestamp of when this patch was last written.
+	// Set by the Trainer admission webhook on each create or update. Used for observability only,
+	// not used as a list map key.
+	// +optional
+	Time *metav1.Time `json:"time,omitempty"`
+
+	// trainingRuntimeSpec defines allowed patches for ClusterTrainingRuntime or TrainingRuntime-based jobs.
+	// +optional
+	TrainingRuntimeSpec *TrainingRuntimeSpecPatch `json:"trainingRuntimeSpec,omitempty"`
+}
+
+// TrainingRuntimeSpecPatch mirrors TrainingRuntimeSpec but only exposes
+// the fields managers are permitted to patch.
+type TrainingRuntimeSpecPatch struct {
+	// template patches the JobSet template.
+	// +optional
+	Template *JobSetTemplatePatch `json:"template,omitempty"`
+}
+
+// JobSetTemplatePatch defines patches for the JobSet template.
+// It mirrors JobSetTemplateSpec but only exposes metadata and restricted spec fields.
+type JobSetTemplatePatch struct {
+	// metadata patches the JobSet object metadata.
+	// Only labels and annotations are allowed.
+	// +optional
+	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// spec patches the JobSet spec with restricted fields.
+	// +optional
+	Spec *JobSetSpecPatch `json:"spec,omitempty"`
+}
+
+// JobSetSpecPatch defines allowed patches for the JobSet spec.
+type JobSetSpecPatch struct {
+	// replicatedJobs defines per-job patches, keyed by job name.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=100
+	// +optional
+	ReplicatedJobs []ReplicatedJobPatch `json:"replicatedJobs,omitempty"`
+}
+
+// ReplicatedJobPatch defines patches for a specific replicated job within the JobSet.
+type ReplicatedJobPatch struct {
+	// name is the name of the replicated job to patch.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// template patches the Job template for this replicated job.
+	// +optional
+	Template *JobTemplatePatch `json:"template,omitempty"`
+}
+
+// JobTemplatePatch defines patches for a Job template within a replicated job.
+type JobTemplatePatch struct {
+	// metadata patches the Job template metadata.
+	// Only labels and annotations are allowed.
+	// +optional
+	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// spec patches the Job spec with restricted fields.
+	// +optional
+	Spec *JobSpecPatch `json:"spec,omitempty"`
+}
+
+// JobSpecPatch defines allowed patches for the Job spec.
+type JobSpecPatch struct {
+	// template patches the Pod template for this Job.
+	// +optional
+	Template *PodTemplatePatch `json:"template,omitempty"`
+}
+
+// PodTemplatePatch defines patches for a Pod template within a Job.
+type PodTemplatePatch struct {
+	// metadata patches the Pod template metadata.
+	// Only labels and annotations are allowed.
+	// +optional
+	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// spec patches the Pod spec with the fields managers are permitted to set.
+	// +optional
+	Spec *PodSpecPatch `json:"spec,omitempty"`
+}
+
+// PodSpecPatch contains the Pod spec fields that managers are permitted to patch.
+type PodSpecPatch struct {
+	// serviceAccountName patches the service account for the Pods in the target job templates.
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
+
+	// volumes patches the Pod's volumes.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=128
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// initContainers patches the init containers in the target job templates.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=64
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	InitContainers []ContainerPatch `json:"initContainers,omitempty"`
+
+	// containers patches specific containers in the target job templates.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=64
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	Containers []ContainerPatch `json:"containers,omitempty"`
+
+	// imagePullSecrets patches the image pull secrets for the Pods in the target job templates.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=64
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// securityContext patches the Pod's security context.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf", message="field is immutable"
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+
+	// nodeSelector patches the node selector to place Pods on specific nodes.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// affinity patches the Pod's scheduling affinity.
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// tolerations patches the Pod's tolerations.
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// schedulingGates patches the scheduling gates for the Pods in the target job templates.
+	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-scheduling-readiness/
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=16
+	// +optional
+	SchedulingGates []corev1.PodSchedulingGate `json:"schedulingGates,omitempty"`
+}
+
+// ContainerPatch represents parameters that can be patched using PodSpecPatch.
+type ContainerPatch struct {
+	// name for the container. Runtime must have this container.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// env is the list of environment variables to set in the container.
+	// These values will be merged with the Runtime's environments.
+	// These values can't be set for container with the name: `node`, `dataset-initializer`, or
+	// `model-initializer`. For those containers the envs can only be set via Trainer or Initializer APIs.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// volumeMounts are the volumes to mount into the container's filesystem.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// securityContext patches the container's security context.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+	// +optional
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // PodTemplateSpecOverride represents the spec overrides for Pod template.
