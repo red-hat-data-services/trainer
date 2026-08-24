@@ -217,6 +217,103 @@ var _ = ginkgo.Describe("TrainJob Webhook", ginkgo.Ordered, func() {
 						Obj()
 				},
 				testingutil.BeForbiddenError()),
+			// The following runtimePatches entries document target behavior from
+			// tmp/kueue-integration-fix.md step 4: today's validators only look at
+			// spec.PodTemplateOverrides, so runtimePatches-sourced hostPath
+			// volumes, control-plane tolerations and unmappable fields are not
+			// rejected. These are EXPECTED TO BE RED (i.e. actually gomega.Succeed())
+			// until EffectivePodTemplateOverrides is wired into the webhook.
+			ginkgo.Entry("Should fail in creating trainJob with a hostPath volume arriving via runtimePatches",
+				func() *trainer.TrainJob {
+					return testingutil.MakeTrainJobWrapper(ns.Name, jobName).
+						RuntimeRef(trainer.GroupVersion.WithKind(trainer.TrainingRuntimeKind), runtimeName).
+						RuntimePatches([]trainer.RuntimePatch{
+							{
+								Manager: "kueue.x-k8s.io/manager",
+								TrainingRuntimeSpec: &trainer.TrainingRuntimeSpecPatch{
+									Template: &trainer.JobSetTemplatePatch{
+										Spec: &trainer.JobSetSpecPatch{
+											ReplicatedJobs: []trainer.ReplicatedJobPatch{
+												{
+													Name: constants.Node,
+													Template: &trainer.JobTemplatePatch{
+														Spec: &trainer.JobSpecPatch{
+															Template: &trainer.PodTemplatePatch{
+																Spec: &trainer.PodSpecPatch{
+																	Volumes: []corev1.Volume{
+																		{
+																			Name: "host-vol",
+																			VolumeSource: corev1.VolumeSource{
+																				HostPath: &corev1.HostPathVolumeSource{Path: "/etc"},
+																			},
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						}).
+						Obj()
+				},
+				testingutil.BeForbiddenError()),
+			ginkgo.Entry("Should fail in creating trainJob with a control-plane toleration arriving via runtimePatches",
+				func() *trainer.TrainJob {
+					return testingutil.MakeTrainJobWrapper(ns.Name, jobName).
+						RuntimeRef(trainer.GroupVersion.WithKind(trainer.TrainingRuntimeKind), runtimeName).
+						RuntimePatches([]trainer.RuntimePatch{
+							{
+								Manager: "kueue.x-k8s.io/manager",
+								TrainingRuntimeSpec: &trainer.TrainingRuntimeSpecPatch{
+									Template: &trainer.JobSetTemplatePatch{
+										Spec: &trainer.JobSetSpecPatch{
+											ReplicatedJobs: []trainer.ReplicatedJobPatch{
+												{
+													Name: constants.Node,
+													Template: &trainer.JobTemplatePatch{
+														Spec: &trainer.JobSpecPatch{
+															Template: &trainer.PodTemplatePatch{
+																Spec: &trainer.PodSpecPatch{
+																	Tolerations: []corev1.Toleration{
+																		{Key: "node-role.kubernetes.io/control-plane", Operator: corev1.TolerationOpExists},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						}).
+						Obj()
+				},
+				testingutil.BeForbiddenError()),
+			ginkgo.Entry("Should fail in creating trainJob with an unmappable JobSetTemplatePatch.Metadata field via runtimePatches",
+				func() *trainer.TrainJob {
+					return testingutil.MakeTrainJobWrapper(ns.Name, jobName).
+						RuntimeRef(trainer.GroupVersion.WithKind(trainer.TrainingRuntimeKind), runtimeName).
+						RuntimePatches([]trainer.RuntimePatch{
+							{
+								Manager: "kueue.x-k8s.io/manager",
+								TrainingRuntimeSpec: &trainer.TrainingRuntimeSpecPatch{
+									Template: &trainer.JobSetTemplatePatch{
+										Metadata: &metav1.ObjectMeta{Labels: map[string]string{"a": "b"}},
+										Spec:     &trainer.JobSetSpecPatch{},
+									},
+								},
+							},
+						}).
+						Obj()
+				},
+				testingutil.BeForbiddenError()),
 		)
 		ginkgo.DescribeTable("RFC1035-compliant TrainJob name validation", func(trainJob func() *trainer.TrainJob, errorMatcher gomega.OmegaMatcher) {
 			gomega.Expect(k8sClient.Create(ctx, trainJob())).Should(errorMatcher)
