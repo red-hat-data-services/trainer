@@ -42,6 +42,7 @@ import (
 	fwkcore "github.com/kubeflow/trainer/v2/pkg/runtime/framework/core"
 	fwkplugins "github.com/kubeflow/trainer/v2/pkg/runtime/framework/plugins"
 	idxer "github.com/kubeflow/trainer/v2/pkg/runtime/indexer"
+	trainjobutil "github.com/kubeflow/trainer/v2/pkg/util/trainjob"
 )
 
 var (
@@ -188,7 +189,11 @@ func (r *TrainingRuntime) newRuntimeInfo(
 }
 
 func (r *TrainingRuntime) mergePodTemplateOverrides(trainJob *trainer.TrainJob, jobSetTemplateSpec *trainer.JobSetTemplateSpec) error {
-	for _, podTemplateOverride := range trainJob.Spec.PodTemplateOverrides {
+	effectiveOverrides, errs := trainjobutil.EffectivePodTemplateOverrides(trainJob)
+	if len(errs) != 0 {
+		return errs.ToAggregate()
+	}
+	for _, podTemplateOverride := range effectiveOverrides {
 		for i, job := range jobSetTemplateSpec.Spec.ReplicatedJobs {
 			if !slices.ContainsFunc(podTemplateOverride.TargetJobs, func(targetJob trainer.PodTemplateOverrideTargetJob) bool {
 				return targetJob.Name == job.Name

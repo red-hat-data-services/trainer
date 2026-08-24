@@ -548,11 +548,9 @@ func TestValidate(t *testing.T) {
 					},
 				}).Obj(),
 			wantError: field.ErrorList{
-				field.Invalid(podTemplateOverridePath,
-					[]trainer.PodTemplateOverride{
-						{
-							TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: "invalid"}},
-						},
+				field.Invalid(podTemplateOverridePath.Index(0),
+					trainer.PodTemplateOverride{
+						TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: "invalid"}},
 					},
 					"must not have targetJob that doesn't exist in the runtime job template"),
 			},
@@ -596,15 +594,13 @@ func TestValidate(t *testing.T) {
 					},
 				}).Obj(),
 			wantError: field.ErrorList{
-				field.Invalid(podTemplateOverridePath,
-					[]trainer.PodTemplateOverride{
-						{
-							TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
-							Spec: &trainer.PodTemplateSpecOverride{
-								InitContainers: []trainer.ContainerOverride{
-									{
-										Name: "invalid",
-									},
+				field.Invalid(podTemplateOverridePath.Index(0),
+					trainer.PodTemplateOverride{
+						TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
+						Spec: &trainer.PodTemplateSpecOverride{
+							InitContainers: []trainer.ContainerOverride{
+								{
+									Name: "invalid",
 								},
 							},
 						},
@@ -651,15 +647,13 @@ func TestValidate(t *testing.T) {
 					},
 				}).Obj(),
 			wantError: field.ErrorList{
-				field.Invalid(podTemplateOverridePath,
-					[]trainer.PodTemplateOverride{
-						{
-							TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
-							Spec: &trainer.PodTemplateSpecOverride{
-								Containers: []trainer.ContainerOverride{
-									{
-										Name: "invalid",
-									},
+				field.Invalid(podTemplateOverridePath.Index(0),
+					trainer.PodTemplateOverride{
+						TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
+						Spec: &trainer.PodTemplateSpecOverride{
+							Containers: []trainer.ContainerOverride{
+								{
+									Name: "invalid",
 								},
 							},
 						},
@@ -712,19 +706,17 @@ func TestValidate(t *testing.T) {
 					},
 				}).Obj(),
 			wantError: field.ErrorList{
-				field.Invalid(podTemplateOverridePath,
-					[]trainer.PodTemplateOverride{
-						{
-							TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
-							Spec: &trainer.PodTemplateSpecOverride{
-								Containers: []trainer.ContainerOverride{
-									{
-										Name: constants.Node,
-										Env: []corev1.EnvVar{
-											{
-												Name:  "ENV_NAME",
-												Value: "OVERRIDE",
-											},
+				field.Invalid(podTemplateOverridePath.Index(0),
+					trainer.PodTemplateOverride{
+						TargetJobs: []trainer.PodTemplateOverrideTargetJob{{Name: constants.Node}},
+						Spec: &trainer.PodTemplateSpecOverride{
+							Containers: []trainer.ContainerOverride{
+								{
+									Name: constants.Node,
+									Env: []corev1.EnvVar{
+										{
+											Name:  "ENV_NAME",
+											Value: "OVERRIDE",
 										},
 									},
 								},

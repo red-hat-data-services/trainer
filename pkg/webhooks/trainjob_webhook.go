@@ -30,6 +30,7 @@ import (
 
 	trainer "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1"
 	"github.com/kubeflow/trainer/v2/pkg/runtime"
+	trainjobutil "github.com/kubeflow/trainer/v2/pkg/util/trainjob"
 )
 
 type TrainJobWebhook struct {
@@ -90,13 +91,18 @@ func (w *TrainJobWebhook) ValidateDelete(context.Context, apiruntime.Object) (ad
 
 func validatePodTemplateOverridesSecurity(trainJob *trainer.TrainJob) field.ErrorList {
 	var allErrs field.ErrorList
-	basePath := field.NewPath("spec", "podTemplateOverrides")
 
-	for i, override := range trainJob.Spec.PodTemplateOverrides {
+	effectiveOverrides, errs := trainjobutil.EffectivePodTemplateOverridesWithOrigin(trainJob)
+	if len(errs) != 0 {
+		return errs
+	}
+
+	for _, entry := range effectiveOverrides {
+		override := entry.Override
 		if override.Spec == nil {
 			continue
 		}
-		specPath := basePath.Index(i).Child("spec")
+		specPath := entry.Path.Child("spec")
 
 		for j, vol := range override.Spec.Volumes {
 			if vol.HostPath != nil {
