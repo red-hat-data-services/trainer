@@ -643,6 +643,11 @@ func (t *TrainJobWrapper) PodTemplateOverrides(podTemplateOverrides []trainer.Po
 	return t
 }
 
+func (t *TrainJobWrapper) RuntimePatches(runtimePatches []trainer.RuntimePatch) *TrainJobWrapper {
+	t.Spec.RuntimePatches = runtimePatches
+	return t
+}
+
 func (t *TrainJobWrapper) ManagedBy(m string) *TrainJobWrapper {
 	t.Spec.ManagedBy = &m
 	return t
