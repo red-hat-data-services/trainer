@@ -46,6 +46,7 @@ import (
 	"github.com/kubeflow/trainer/v2/pkg/constants"
 	"github.com/kubeflow/trainer/v2/pkg/runtime"
 	"github.com/kubeflow/trainer/v2/pkg/runtime/framework"
+	trainjobutil "github.com/kubeflow/trainer/v2/pkg/util/trainjob"
 )
 
 var (
@@ -121,25 +122,31 @@ func (j *JobSet) Validate(ctx context.Context, info *runtime.Info, oldObj, newOb
 
 	allErrs = append(allErrs, j.checkPodTemplateOverridesImmutability(ctx, oldObj, newObj)...)
 
+	effectiveOverrides, effErrs := trainjobutil.EffectivePodTemplateOverridesWithOrigin(newObj)
+	if len(effErrs) != 0 {
+		return nil, append(allErrs, effErrs...)
+	}
+
 	// TODO (andreyvelich): Validate Volumes, VolumeMounts, and Tolerations.
-	for _, podTemplateOverride := range newObj.Spec.PodTemplateOverrides {
+	for _, entry := range effectiveOverrides {
+		podTemplateOverride := entry.Override
 		for _, targetJob := range podTemplateOverride.TargetJobs {
 			containers, ok := rJobContainerNames[targetJob.Name]
 			if !ok {
-				allErrs = append(allErrs, field.Invalid(podTemplateOverridePath, newObj.Spec.PodTemplateOverrides, "must not have targetJob that doesn't exist in the runtime job template"))
+				allErrs = append(allErrs, field.Invalid(entry.Path, podTemplateOverride, "must not have targetJob that doesn't exist in the runtime job template"))
 			}
 			if podTemplateOverride.Spec != nil {
 				for _, overrideContainer := range podTemplateOverride.Spec.InitContainers {
 					if !containers.Has(overrideContainer.Name) {
-						allErrs = append(allErrs, field.Invalid(podTemplateOverridePath, newObj.Spec.PodTemplateOverrides, fmt.Sprintf("must not have initContainer that doesn't exist in the runtime job %s", targetJob.Name)))
+						allErrs = append(allErrs, field.Invalid(entry.Path, podTemplateOverride, fmt.Sprintf("must not have initContainer that doesn't exist in the runtime job %s", targetJob.Name)))
 					}
 				}
 				for _, overrideContainer := range podTemplateOverride.Spec.Containers {
 					if !containers.Has(overrideContainer.Name) {
-						allErrs = append(allErrs, field.Invalid(podTemplateOverridePath, newObj.Spec.PodTemplateOverrides, fmt.Sprintf("must not have container that doesn't exist in the runtime job %s", targetJob.Name)))
+						allErrs = append(allErrs, field.Invalid(entry.Path, podTemplateOverride, fmt.Sprintf("must not have container that doesn't exist in the runtime job %s", targetJob.Name)))
 						// Trainer and Initializer APIs should be used to set TrainJob envs for the reserved containers.
 					} else if len(overrideContainer.Env) > 0 && (overrideContainer.Name == constants.DatasetInitializer || overrideContainer.Name == constants.ModelInitializer || overrideContainer.Name == constants.Node) {
-						allErrs = append(allErrs, field.Invalid(podTemplateOverridePath, newObj.Spec.PodTemplateOverrides,
+						allErrs = append(allErrs, field.Invalid(entry.Path, podTemplateOverride,
 							fmt.Sprintf("must not have envs for the %s, %s, %s containers", constants.DatasetInitializer, constants.ModelInitializer, constants.Node)))
 					}
 				}
@@ -160,7 +167,8 @@ func (j *JobSet) checkPodTemplateOverridesImmutability(ctx context.Context, oldO
 	}
 
 	jobSet := &jobsetv1alpha2.JobSet{}
-	changed := !equality.Semantic.DeepEqual(oldObj.Spec.PodTemplateOverrides, newObj.Spec.PodTemplateOverrides)
+	changed := !equality.Semantic.DeepEqual(oldObj.Spec.PodTemplateOverrides, newObj.Spec.PodTemplateOverrides) ||
+		!equality.Semantic.DeepEqual(oldObj.Spec.RuntimePatches, newObj.Spec.RuntimePatches)
 	suspended := ptr.Equal(newObj.Spec.Suspend, ptr.To(true))
 	if changed {
 		if !suspended {

@@ -39,6 +39,7 @@ import (
 	testingutil "github.com/kubeflow/trainer/v2/pkg/util/testing"
 	"github.com/kubeflow/trainer/v2/test/integration/framework"
 	"github.com/kubeflow/trainer/v2/test/util"
+	"github.com/kubeflow/trainer/v2/test/util/kueuecompat"
 )
 
 var _ = ginkgo.Describe("TrainJob controller", ginkgo.Ordered, func() {
@@ -951,6 +952,91 @@ var _ = ginkgo.Describe("TrainJob controller", ginkgo.Ordered, func() {
 						util.IgnoreObjectMetadata))
 				}, util.Timeout, util.Interval).Should(gomega.Succeed())
 			})
+		})
+
+		ginkgo.Context("Integration tests for Kueue runtimePatches compat", func() {
+			// Replays the sequence Kueue's TrainJob integration actually issues
+			// against the API server: create with the manager's patch slot seeded,
+			// admit with per-podset scheduling info, unsuspend, stop/requeue, then
+			// re-admit. See tmp/kueue-integration-fix.md, "Loop B" and "The sequence
+			// to replay".
+			//
+			// Table-driven over the kueue016 (podTemplateOverrides) and kueue018
+			// (runtimePatches) compat shims: kueue016 exercises the existing,
+			// already-wired podTemplateOverrides path and is expected to pass;
+			// kueue018 exercises spec.runtimePatches, which
+			// EffectivePodTemplateOverrides does not yet translate, so it is
+			// expected to fail here for the same reason the Loop A unit tests do.
+			replicatedJobNames := []string{constants.Node, constants.DatasetInitializer, constants.ModelInitializer}
+			podSetsInfo := []kueuecompat.PodSetInfo{
+				{Name: constants.Node, NodeSelector: map[string]string{"kueue-test-flavor": "on"}},
+				{Name: constants.DatasetInitializer, NodeSelector: map[string]string{"kueue-test-flavor": "on"}},
+				{Name: constants.ModelInitializer, NodeSelector: map[string]string{"kueue-test-flavor": "on"}},
+			}
+
+			ginkgo.DescribeTable("Should replay the Kueue admit/requeue/re-admit lifecycle",
+				func(seed func(*trainer.TrainJob), admit func(*trainer.TrainJob) error, restore func(*trainer.TrainJob) bool) {
+					ginkgo.By("Creating TrainingRuntime and a Kueue-managed, seeded TrainJob")
+					seed(trainJob)
+					gomega.Expect(k8sClient.Create(ctx, trainingRuntime)).Should(gomega.Succeed())
+					gomega.Eventually(func(g gomega.Gomega) {
+						g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(trainingRuntime), trainingRuntime)).Should(gomega.Succeed())
+					}, util.Timeout, util.Interval).Should(gomega.Succeed())
+					gomega.Expect(k8sClient.Create(ctx, trainJob)).Should(gomega.Succeed())
+
+					ginkgo.By("Admitting: filling in per-podset scheduling info and unsuspending")
+					gomega.Expect(k8sClient.Get(ctx, trainJobKey, trainJob)).Should(gomega.Succeed())
+					gomega.Expect(admit(trainJob)).Should(gomega.Succeed())
+
+					ginkgo.By("Checking the derived JobSet's pod templates carry the nodeSelector")
+					gomega.Eventually(func(g gomega.Gomega) {
+						jobSet := &jobsetv1alpha2.JobSet{}
+						g.Expect(k8sClient.Get(ctx, trainJobKey, jobSet)).Should(gomega.Succeed())
+						for _, rj := range jobSet.Spec.ReplicatedJobs {
+							g.Expect(rj.Template.Spec.Template.Spec.NodeSelector).Should(gomega.HaveKeyWithValue("kueue-test-flavor", "on"))
+						}
+					}, util.Timeout, util.Interval).Should(gomega.Succeed())
+
+					ginkgo.By("Stopping/requeuing: suspending and clearing the derived overrides")
+					gomega.Expect(k8sClient.Get(ctx, trainJobKey, trainJob)).Should(gomega.Succeed())
+					suspend := true
+					trainJob.Spec.Suspend = &suspend
+					gomega.Expect(k8sClient.Update(ctx, trainJob)).Should(gomega.Succeed())
+					gomega.Expect(restore(trainJob)).Should(gomega.BeTrue())
+					gomega.Expect(k8sClient.Update(ctx, trainJob)).Should(gomega.Succeed())
+
+					ginkgo.By("Re-admitting with the same info: no duplicate overrides accumulate")
+					gomega.Expect(k8sClient.Get(ctx, trainJobKey, trainJob)).Should(gomega.Succeed())
+					gomega.Expect(admit(trainJob)).Should(gomega.Succeed())
+					gomega.Eventually(func(g gomega.Gomega) {
+						jobSet := &jobsetv1alpha2.JobSet{}
+						g.Expect(k8sClient.Get(ctx, trainJobKey, jobSet)).Should(gomega.Succeed())
+						for _, rj := range jobSet.Spec.ReplicatedJobs {
+							g.Expect(rj.Template.Spec.Template.Spec.NodeSelector).Should(gomega.HaveKeyWithValue("kueue-test-flavor", "on"))
+						}
+					}, util.Timeout, util.Interval).Should(gomega.Succeed())
+				},
+				ginkgo.Entry("kueue016 (podTemplateOverrides)",
+					func(tj *trainer.TrainJob) {},
+					func(tj *trainer.TrainJob) error {
+						return kueuecompat.RunWithPodSetsInfoKueue016(ctx, k8sClient, tj, replicatedJobNames, podSetsInfo)
+					},
+					func(tj *trainer.TrainJob) bool {
+						return kueuecompat.RestorePodSetsInfoKueue016(tj, podSetsInfo)
+					},
+				),
+				ginkgo.Entry("kueue018 (runtimePatches) - expected red until translation lands",
+					func(tj *trainer.TrainJob) {
+						kueuecompat.SeedRuntimePatch(tj)
+					},
+					func(tj *trainer.TrainJob) error {
+						return kueuecompat.RunWithPodSetsInfo(ctx, k8sClient, tj, replicatedJobNames, podSetsInfo)
+					},
+					func(tj *trainer.TrainJob) bool {
+						return kueuecompat.RestorePodSetsInfo(tj, podSetsInfo)
+					},
+				),
+			)
 		})
 
 		ginkgo.Context("Integration Tests for the OpenMPI Runtime", func() {

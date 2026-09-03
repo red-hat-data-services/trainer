@@ -25,6 +25,7 @@ type TrainJobSpecApplyConfiguration struct {
 	Labels               map[string]string                       `json:"labels,omitempty"`
 	Annotations          map[string]string                       `json:"annotations,omitempty"`
 	PodTemplateOverrides []PodTemplateOverrideApplyConfiguration `json:"podTemplateOverrides,omitempty"`
+	RuntimePatches       []RuntimePatchApplyConfiguration        `json:"runtimePatches,omitempty"`
 	Suspend              *bool                                   `json:"suspend,omitempty"`
 	ManagedBy            *string                                 `json:"managedBy,omitempty"`
 }
@@ -96,6 +97,19 @@ func (b *TrainJobSpecApplyConfiguration) WithPodTemplateOverrides(values ...*Pod
 			panic("nil value passed to WithPodTemplateOverrides")
 		}
 		b.PodTemplateOverrides = append(b.PodTemplateOverrides, *values[i])
+	}
+	return b
+}
+
+// WithRuntimePatches adds the given value to the RuntimePatches field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the RuntimePatches field.
+func (b *TrainJobSpecApplyConfiguration) WithRuntimePatches(values ...*RuntimePatchApplyConfiguration) *TrainJobSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithRuntimePatches")
+		}
+		b.RuntimePatches = append(b.RuntimePatches, *values[i])
 	}
 	return b
 }

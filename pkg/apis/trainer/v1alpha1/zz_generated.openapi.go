@@ -33,20 +33,29 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ClusterTrainingRuntime":           schema_pkg_apis_trainer_v1alpha1_ClusterTrainingRuntime(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ClusterTrainingRuntimeList":       schema_pkg_apis_trainer_v1alpha1_ClusterTrainingRuntimeList(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerOverride":                schema_pkg_apis_trainer_v1alpha1_ContainerOverride(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerPatch":                   schema_pkg_apis_trainer_v1alpha1_ContainerPatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.CoschedulingPodGroupPolicySource": schema_pkg_apis_trainer_v1alpha1_CoschedulingPodGroupPolicySource(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.DatasetInitializer":               schema_pkg_apis_trainer_v1alpha1_DatasetInitializer(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.Initializer":                      schema_pkg_apis_trainer_v1alpha1_Initializer(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetSpecPatch":                  schema_pkg_apis_trainer_v1alpha1_JobSetSpecPatch(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetTemplatePatch":              schema_pkg_apis_trainer_v1alpha1_JobSetTemplatePatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetTemplateSpec":               schema_pkg_apis_trainer_v1alpha1_JobSetTemplateSpec(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSpecPatch":                     schema_pkg_apis_trainer_v1alpha1_JobSpecPatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobStatus":                        schema_pkg_apis_trainer_v1alpha1_JobStatus(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobTemplatePatch":                 schema_pkg_apis_trainer_v1alpha1_JobTemplatePatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.MLPolicy":                         schema_pkg_apis_trainer_v1alpha1_MLPolicy(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.MLPolicySource":                   schema_pkg_apis_trainer_v1alpha1_MLPolicySource(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.MPIMLPolicySource":                schema_pkg_apis_trainer_v1alpha1_MPIMLPolicySource(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ModelInitializer":                 schema_pkg_apis_trainer_v1alpha1_ModelInitializer(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodGroupPolicy":                   schema_pkg_apis_trainer_v1alpha1_PodGroupPolicy(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodGroupPolicySource":             schema_pkg_apis_trainer_v1alpha1_PodGroupPolicySource(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodSpecPatch":                     schema_pkg_apis_trainer_v1alpha1_PodSpecPatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplateOverride":              schema_pkg_apis_trainer_v1alpha1_PodTemplateOverride(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplateOverrideTargetJob":     schema_pkg_apis_trainer_v1alpha1_PodTemplateOverrideTargetJob(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplatePatch":                 schema_pkg_apis_trainer_v1alpha1_PodTemplatePatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplateSpecOverride":          schema_pkg_apis_trainer_v1alpha1_PodTemplateSpecOverride(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ReplicatedJobPatch":               schema_pkg_apis_trainer_v1alpha1_ReplicatedJobPatch(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimePatch":                     schema_pkg_apis_trainer_v1alpha1_RuntimePatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimeRef":                       schema_pkg_apis_trainer_v1alpha1_RuntimeRef(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TorchElasticPolicy":               schema_pkg_apis_trainer_v1alpha1_TorchElasticPolicy(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TorchMLPolicySource":              schema_pkg_apis_trainer_v1alpha1_TorchMLPolicySource(ref),
@@ -58,6 +67,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntime":                  schema_pkg_apis_trainer_v1alpha1_TrainingRuntime(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntimeList":              schema_pkg_apis_trainer_v1alpha1_TrainingRuntimeList(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntimeSpec":              schema_pkg_apis_trainer_v1alpha1_TrainingRuntimeSpec(ref),
+		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntimeSpecPatch":         schema_pkg_apis_trainer_v1alpha1_TrainingRuntimeSpecPatch(ref),
 		"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.VolcanoPodGroupPolicySource":      schema_pkg_apis_trainer_v1alpha1_VolcanoPodGroupPolicySource(ref),
 		"k8s.io/api/autoscaling/v2.ContainerResourceMetricSource":                                   schema_k8sio_api_autoscaling_v2_ContainerResourceMetricSource(ref),
 		"k8s.io/api/autoscaling/v2.ContainerResourceMetricStatus":                                   schema_k8sio_api_autoscaling_v2_ContainerResourceMetricStatus(ref),
@@ -584,6 +594,79 @@ func schema_pkg_apis_trainer_v1alpha1_ContainerOverride(ref common.ReferenceCall
 	}
 }
 
+func schema_pkg_apis_trainer_v1alpha1_ContainerPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContainerPatch represents parameters that can be patched using PodSpecPatch.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name for the container. Runtime must have this container.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "env is the list of environment variables to set in the container. These values will be merged with the Runtime's environments. These values can't be set for container with the name: `node`, `dataset-initializer`, or `model-initializer`. For those containers the envs can only be set via Trainer or Initializer APIs.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "volumeMounts are the volumes to mount into the container's filesystem.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"securityContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "securityContext patches the container's security context. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
 func schema_pkg_apis_trainer_v1alpha1_CoschedulingPodGroupPolicySource(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -681,6 +764,70 @@ func schema_pkg_apis_trainer_v1alpha1_Initializer(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_pkg_apis_trainer_v1alpha1_JobSetSpecPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobSetSpecPatch defines allowed patches for the JobSet spec.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replicatedJobs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "replicatedJobs defines per-job patches, keyed by job name.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ReplicatedJobPatch"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ReplicatedJobPatch"},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_JobSetTemplatePatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobSetTemplatePatch defines patches for the JobSet template. It mirrors JobSetTemplateSpec but only exposes metadata and restricted spec fields.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "metadata patches the JobSet object metadata. Only labels and annotations are allowed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "spec patches the JobSet spec with restricted fields.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetSpecPatch"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetSpecPatch", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
 func schema_pkg_apis_trainer_v1alpha1_JobSetTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -707,6 +854,27 @@ func schema_pkg_apis_trainer_v1alpha1_JobSetTemplateSpec(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/jobset/api/jobset/v1alpha2.JobSetSpec"},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_JobSpecPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobSpecPatch defines allowed patches for the Job spec.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"template": {
+						SchemaProps: spec.SchemaProps{
+							Description: "template patches the Pod template for this Job.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplatePatch"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplatePatch"},
 	}
 }
 
@@ -762,6 +930,33 @@ func schema_pkg_apis_trainer_v1alpha1_JobStatus(ref common.ReferenceCallback) co
 				Required: []string{"name", "ready", "succeeded", "failed", "active", "suspended"},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_JobTemplatePatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobTemplatePatch defines patches for a Job template within a replicated job.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "metadata patches the Job template metadata. Only labels and annotations are allowed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "spec patches the Job spec with restricted fields.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSpecPatch"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSpecPatch", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -971,6 +1166,185 @@ func schema_pkg_apis_trainer_v1alpha1_PodGroupPolicySource(ref common.ReferenceC
 	}
 }
 
+func schema_pkg_apis_trainer_v1alpha1_PodSpecPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodSpecPatch contains the Pod spec fields that managers are permitted to patch.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "serviceAccountName patches the service account for the Pods in the target job templates.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"volumes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "volumes patches the Pod's volumes.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"initContainers": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "initContainers patches the init containers in the target job templates.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerPatch"),
+									},
+								},
+							},
+						},
+					},
+					"containers": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "containers patches specific containers in the target job templates.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerPatch"),
+									},
+								},
+							},
+						},
+					},
+					"imagePullSecrets": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "imagePullSecrets patches the image pull secrets for the Pods in the target job templates.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
+					"securityContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "securityContext patches the Pod's security context. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "nodeSelector patches the node selector to place Pods on specific nodes.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"affinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "affinity patches the Pod's scheduling affinity.",
+							Ref:         ref("k8s.io/api/core/v1.Affinity"),
+						},
+					},
+					"tolerations": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "tolerations patches the Pod's tolerations.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"schedulingGates": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"name",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "schedulingGates patches the scheduling gates for the Pods in the target job templates. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-scheduling-readiness/",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.PodSchedulingGate"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerPatch", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSchedulingGate", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
 func schema_pkg_apis_trainer_v1alpha1_PodTemplateOverride(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1035,6 +1409,33 @@ func schema_pkg_apis_trainer_v1alpha1_PodTemplateOverrideTargetJob(ref common.Re
 				Required: []string{"name"},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_PodTemplatePatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodTemplatePatch defines patches for a Pod template within a Job.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "metadata patches the Pod template metadata. Only labels and annotations are allowed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "spec patches the Pod spec with the fields managers are permitted to set.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodSpecPatch"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodSpecPatch", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1208,6 +1609,70 @@ func schema_pkg_apis_trainer_v1alpha1_PodTemplateSpecOverride(ref common.Referen
 		},
 		Dependencies: []string{
 			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.ContainerOverride", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSchedulingGate", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_ReplicatedJobPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReplicatedJobPatch defines patches for a specific replicated job within the JobSet.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name is the name of the replicated job to patch.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"template": {
+						SchemaProps: spec.SchemaProps{
+							Description: "template patches the Job template for this replicated job.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobTemplatePatch"),
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobTemplatePatch"},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_RuntimePatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimePatch represents a custom patch applied to the TrainJob's training runtime template. Patches are keyed by manager to provide clear ownership and avoid conflicts between controllers.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"manager": {
+						SchemaProps: spec.SchemaProps{
+							Description: "manager indicates who owns this patch entry. It can be set by the user, external controllers, or admission webhooks to track ownership and avoid conflicts. For example, Kueue sets this field to \"kueue.x-k8s.io/manager\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"time": {
+						SchemaProps: spec.SchemaProps{
+							Description: "time is the timestamp of when this patch was last written. Set by the Trainer admission webhook on each create or update. Used for observability only, not used as a list map key.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"trainingRuntimeSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "trainingRuntimeSpec defines allowed patches for ClusterTrainingRuntime or TrainingRuntime-based jobs.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntimeSpecPatch"),
+						},
+					},
+				},
+				Required: []string{"manager"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.TrainingRuntimeSpecPatch", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -1506,6 +1971,28 @@ func schema_pkg_apis_trainer_v1alpha1_TrainJobSpec(ref common.ReferenceCallback)
 							},
 						},
 					},
+					"runtimePatches": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"manager",
+								},
+								"x-kubernetes-list-type": "map",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "runtimePatches defines custom patches applied to the TrainJob's Runtime. Patches are keyed by manager to provide clear ownership and avoid conflicts between controllers.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimePatch"),
+									},
+								},
+							},
+						},
+					},
 					"suspend": {
 						SchemaProps: spec.SchemaProps{
 							Description: "suspend defines whether to suspend the running TrainJob. Defaults to false.",
@@ -1525,7 +2012,7 @@ func schema_pkg_apis_trainer_v1alpha1_TrainJobSpec(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.Initializer", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplateOverride", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimeRef", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.Trainer"},
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.Initializer", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodTemplateOverride", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimePatch", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.RuntimeRef", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.Trainer"},
 	}
 }
 
@@ -1816,6 +2303,27 @@ func schema_pkg_apis_trainer_v1alpha1_TrainingRuntimeSpec(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetTemplateSpec", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.MLPolicy", "github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.PodGroupPolicy"},
+	}
+}
+
+func schema_pkg_apis_trainer_v1alpha1_TrainingRuntimeSpecPatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TrainingRuntimeSpecPatch mirrors TrainingRuntimeSpec but only exposes the fields managers are permitted to patch.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"template": {
+						SchemaProps: spec.SchemaProps{
+							Description: "template patches the JobSet template.",
+							Ref:         ref("github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetTemplatePatch"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kubeflow/trainer/v2/pkg/apis/trainer/v1alpha1.JobSetTemplatePatch"},
 	}
 }
 

@@ -598,6 +598,14 @@ func (t *TrainJobWrapper) SpecLabel(key, value string) *TrainJobWrapper {
 	return t
 }
 
+func (t *TrainJobWrapper) Label(key, value string) *TrainJobWrapper {
+	if t.ObjectMeta.Labels == nil {
+		t.ObjectMeta.Labels = make(map[string]string, 1)
+	}
+	t.ObjectMeta.Labels[key] = value
+	return t
+}
+
 func (t *TrainJobWrapper) Annotation(key, value string) *TrainJobWrapper {
 	if t.ObjectMeta.Annotations == nil {
 		t.ObjectMeta.Annotations = make(map[string]string, 1)
@@ -640,6 +648,11 @@ func (t *TrainJobWrapper) Trainer(trainer *trainer.Trainer) *TrainJobWrapper {
 
 func (t *TrainJobWrapper) PodTemplateOverrides(podTemplateOverrides []trainer.PodTemplateOverride) *TrainJobWrapper {
 	t.Spec.PodTemplateOverrides = podTemplateOverrides
+	return t
+}
+
+func (t *TrainJobWrapper) RuntimePatches(runtimePatches []trainer.RuntimePatch) *TrainJobWrapper {
+	t.Spec.RuntimePatches = runtimePatches
 	return t
 }
 
