@@ -205,6 +205,27 @@ tests:
               memory: "128Mi"
               cpu: "500m"
 
+  - it: Should set default securityContext with readOnlyRootFilesystem
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="manager")].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="manager")].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="manager")].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="manager")].securityContext.capabilities
+          value:
+            drop:
+              - ALL
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="manager")].securityContext.seccompProfile
+          value:
+            type: RuntimeDefault
+
   - it: Should add container securityContext if `controller.securityContext` is set
     set:
       manager:
