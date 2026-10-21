@@ -1,7 +1,7 @@
 # RHOAI configuration for Kubeflow Training Operator (KFTO)
 
 # Adds namespace to all resources.
-namespace: opendatahub
+namespace: redhat-ods-applications
 
 sortOptions:
   order: legacy
@@ -32,6 +32,11 @@ replacements:
     options:
       delimiter: "."
       index: 1
+  - select:
+      kind: ClusterRoleBinding
+      name: trainer-tls-profile
+    fieldPaths:
+    - subjects.0.namespace
 # Replace controller image
 - source:
     kind: ConfigMap
