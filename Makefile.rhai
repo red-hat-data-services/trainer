@@ -26,6 +26,11 @@ APPLICATIONS_NAMESPACE ?= redhat-ods-applications
 NFS_PROVISIONER_OPERATOR_MANIFEST ?= $(RHAI_TEST_MANIFESTS_DIR)/nfs-provisioner-operator.yaml
 NFS_PROVISIONER_MANIFEST ?= $(RHAI_TEST_MANIFESTS_DIR)/nfs-provisioner.yaml
 TRAINER_IMAGE ?=
+# Universal runtime images built from the Konflux snapshot by the
+# distributed-workloads integration test pipeline.
+export ODH_TH_TORCH_CUDA_IMAGE ?=
+export ODH_TH_TORCH_ROCM_IMAGE ?=
+export ODH_TH_TORCH_CPU_IMAGE ?=
 ARTIFACT_DIR ?= $(PROJECT_DIR)/artifacts
 UPSTREAM_JUNIT_REPORT ?= upstream-trainer-junit.xml
 DW_SOURCE_DIR ?= $(PROJECT_DIR)/.test-data/distributed-workloads
@@ -259,6 +264,35 @@ deploy-rhoai: install-jobset-operator ## Install Trainer using RHOAI manifests w
 	if [[ -n "$(TRAINER_IMAGE)" ]]; then
 		echo "Using Trainer image: $(TRAINER_IMAGE)"
 		$(SED) -i "s|odh-kubeflow-trainer-controller-image=.*|odh-kubeflow-trainer-controller-image=$(TRAINER_IMAGE)|" "$(RHOAI_MANIFESTS_DIR)/params.env"
+	fi
+	replace_param() {
+		local key="$$1" value="$$2" file="$$3"
+		if ! grep -q "^$${key}=" "$$file"; then
+			echo "Error: key '$${key}' not found in $$file" >&2
+			return 1
+		fi
+		$(SED) -i "s|^$${key}=.*|$${key}=$${value}|" "$$file"
+	}
+	if [[ -n "$${ODH_TH_TORCH_CUDA_IMAGE:-}" ]]; then
+		echo "Using CUDA runtime image: $${ODH_TH_TORCH_CUDA_IMAGE}"
+		replace_param odh-th-torch-cuda-py312-image "$${ODH_TH_TORCH_CUDA_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
+		replace_param odh-training-universal-workbench-image-cuda-3-5 "$${ODH_TH_TORCH_CUDA_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
+	fi
+	if [[ -n "$${ODH_TH_TORCH_ROCM_IMAGE:-}" ]]; then
+		echo "Using ROCm runtime image: $${ODH_TH_TORCH_ROCM_IMAGE}"
+		replace_param odh-th-torch-rocm-py312-image "$${ODH_TH_TORCH_ROCM_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
+		replace_param odh-training-universal-workbench-image-rocm-3-5 "$${ODH_TH_TORCH_ROCM_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
+	fi
+	if [[ -n "$${ODH_TH_TORCH_CPU_IMAGE:-}" ]]; then
+		echo "Using CPU runtime image: $${ODH_TH_TORCH_CPU_IMAGE}"
+		replace_param odh-th-torch-cpu-py312-image "$${ODH_TH_TORCH_CPU_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
+		replace_param odh-training-universal-workbench-image-cpu-3-5 "$${ODH_TH_TORCH_CPU_IMAGE}" \
+			"$(RHOAI_MANIFESTS_DIR)/params.env"
 	fi
 	@echo "Deploying RHOAI Training Operator to namespace: $(APPLICATIONS_NAMESPACE)"
 	$(KUBECTL) create namespace $(APPLICATIONS_NAMESPACE) --dry-run=client -o yaml | $(KUBECTL) apply -f - >/dev/null 2>&1
