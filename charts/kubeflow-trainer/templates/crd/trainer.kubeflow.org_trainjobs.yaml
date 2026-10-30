@@ -23,7 +23,7 @@ metadata:
     {{- if .Values.crds.keep }}
     helm.sh/resource-policy: keep
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: trainjobs.trainer.kubeflow.org
 spec:
   group: trainer.kubeflow.org
@@ -2819,6 +2819,18 @@ spec:
                                                         x-kubernetes-list-map-keys:
                                                         - name
                                                         x-kubernetes-list-type: map
+                                                        x-kubernetes-validations:
+                                                        - message: field is immutable
+                                                          rule: self == oldSelf
+                                                      schedulerName:
+                                                        description: schedulerName
+                                                          patches the scheduler for
+                                                          the Pods in the target job
+                                                          templates.
+                                                        maxLength: 253
+                                                        minLength: 1
+                                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                        type: string
                                                         x-kubernetes-validations:
                                                         - message: field is immutable
                                                           rule: self == oldSelf

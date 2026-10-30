@@ -17,7 +17,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: optimizationjobs.trainer.kubeflow.org
 spec:
   group: trainer.kubeflow.org
@@ -95,9 +95,12 @@ spec:
                 items:
                   properties:
                     name:
-                      description: name is the name of the hyperparameter.
+                      description: name is the name of the hyperparameter. Only letters,
+                        digits and underscores are allowed, and it cannot start with
+                        a digit.
                       maxLength: 64
                       minLength: 1
+                      pattern: ^[A-Za-z_][A-Za-z0-9_]*$
                       type: string
                     searchSpace:
                       description: searchSpace is the search space for the hyperparameter.
@@ -188,8 +191,8 @@ spec:
                       x-kubernetes-validations:
                       - message: exactly one of the fields in [uniform logUniform
                           categorical] must be set
-                        rule: '[has(self.uniform),has(self.logUniform),has(self.categorical)].filter(x,x==true).size()
-                          == 1'
+                        rule: (has(self.uniform)?1:0)+(has(self.logUniform)?1:0)+(has(self.categorical)?1:0)
+                          == 1
                   required:
                   - name
                   - searchSpace
@@ -213,15 +216,18 @@ spec:
                     description: random is the random search algorithm.
                     properties:
                       seed:
-                        description: seed is the seed for the random search algorithm.
+                        description: |-
+                          seed is the seed for the random search algorithm.
+                          It must be between 0 and 4294967295.
                         format: int64
+                        maximum: 4294967295
+                        minimum: 0
                         type: integer
                     type: object
                 type: object
                 x-kubernetes-validations:
                 - message: exactly one of the fields in [random grid] must be set
-                  rule: '[has(self.random),has(self.grid)].filter(x,x==true).size()
-                    == 1'
+                  rule: (has(self.random)?1:0)+(has(self.grid)?1:0) == 1
               trainJobTemplate:
                 description: trainJobTemplate is the template for the train job to
                   run.
@@ -3446,6 +3452,19 @@ spec:
                                                                 - message: field is
                                                                     immutable
                                                                   rule: self == oldSelf
+                                                              schedulerName:
+                                                                description: schedulerName
+                                                                  patches the scheduler
+                                                                  for the Pods in
+                                                                  the target job templates.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                                x-kubernetes-validations:
+                                                                - message: field is
+                                                                    immutable
+                                                                  rule: self == oldSelf
                                                               schedulingGates:
                                                                 description: |-
                                                                   schedulingGates patches the scheduling gates for the Pods in the target job templates.
@@ -6659,6 +6678,9 @@ spec:
         required:
         - spec
         type: object
+        x-kubernetes-validations:
+        - message: metadata.name must match RFC 1035 DNS label format
+          rule: self.metadata.name.matches('^[a-z]([-a-z0-9]*[a-z0-9])?$')
     served: true
     storage: true
     subresources:
