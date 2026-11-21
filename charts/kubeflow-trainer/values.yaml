@@ -108,6 +108,7 @@ manager:
 
   # -- Security context for manager containers.
   securityContext:
+    readOnlyRootFilesystem: true
     allowPrivilegeEscalation: false
     runAsNonRoot: true
     capabilities:
